@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dev_name: ${{ fromJSON('["' + join(split(env.NAMES, ','), '","') + '"]') }}
+        dev_name: ${{ fromJson(format('["%s"]', replace(env.NAMES, ',', '","'))) }}
     steps:
       - name: echo
         run: |
