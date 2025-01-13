@@ -8,14 +8,14 @@ on:
 env:
   DATE_1: "2025-02-28"
   DATE_2: "2025-03-28"
-  NAMES: "[\"ALLEN\",\"ALLEN\"]"  # Comma-separated list of dev names
+  NAMES: ("ALLEN","ALLEN")  # Comma-separated list of dev names
 
 jobs:
   check-balance:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dev_name: ${{ fromJson(env.NAMES) }}
+        dev_name: ${{ env.NAMES }}
     steps:
       - name: echo
         run: |
