@@ -1,0 +1,51 @@
+name: Check Leave Balance
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'  # Runs at 1 AM UTC daily
+  workflow_dispatch:      # Allows manual trigger
+
+env:
+  DATE_1: "2025-02-28"
+  DATE_2: "2025-03-28"
+
+jobs:
+  check-balance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check first date
+        id: check1
+        run: |
+          RESPONSE=$(curl 'https://www.istaff.hk/EmployeeCalendar/GetLeaveBalanceChart?AsOfDate=${{ env.DATE_1 }}' \
+            -H 'accept: */*' \
+            -H 'accept-language: en-GB,en-US;q=0.9,en;q=0.8,zh-TW;q=0.7,zh;q=0.6' \
+            -H 'content-type: application/json; charset=utf-8' \
+            -H 'cookie: .AspNetCore.Session=${{ secrets.ASPNET_SESSION }}')
+          echo "BALANCE_1=$(echo $RESPONSE | jq -r '.result.annualLeaveBalance')" >> $GITHUB_ENV
+
+      - name: Check second date
+        id: check2
+        run: |
+          RESPONSE=$(curl 'https://www.istaff.hk/EmployeeCalendar/GetLeaveBalanceChart?AsOfDate=${{ env.DATE_2 }}' \
+            -H 'accept: */*' \
+            -H 'accept-language: en-GB,en-US;q=0.9,en;q=0.8,zh-TW;q=0.7,zh;q=0.6' \
+            -H 'content-type: application/json; charset=utf-8' \
+            -H 'cookie: .AspNetCore.Session=${{ secrets.ASPNET_SESSION }}')
+          echo "BALANCE_2=$(echo $RESPONSE | jq -r '.result.annualLeaveBalance')" >> $GITHUB_ENV
+
+      - name: Compare balances and notify
+        if: env.BALANCE_1 == env.BALANCE_2
+        run: |
+          MESSAGE="⚠️ Leave balance alert: No change detected between ${{ env.DATE_1 }} (${{ env.BALANCE_1 }}) and ${{ env.DATE_2 }} (${{ env.BALANCE_2 }})"
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d text="${MESSAGE}" \
+            -d parse_mode="HTML" 
+      - name: Compare balances and notify
+        if: env.BALANCE_1 != env.BALANCE_2
+        run: |
+          MESSAGE="Change detected between ${{ env.DATE_1 }} (${{ env.BALANCE_1 }}) and ${{ env.DATE_2 }} (${{ env.BALANCE_2 }})"
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d text="${MESSAGE}" \
+            -d parse_mode="HTML" 
