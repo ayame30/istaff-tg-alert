@@ -1,8 +1,8 @@
 name: Check Leave Balance
 
 on:
-  schedule:
-    - cron: '*/10 * * * *'  # Runs at 1 AM UTC daily
+  # schedule:
+    # - cron: '*/10 * * * *'  # Runs at 1 AM UTC daily
   workflow_dispatch:      # Allows manual trigger
 
 env:
